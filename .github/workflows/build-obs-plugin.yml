@@ -1,0 +1,50 @@
+name: Build OBS plugin for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'obs-plugin/**'
+      - '.github/workflows/build-obs-plugin.yml'
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: obsproject/obs-plugintemplate
+          path: obs-template
+      - name: Insert our source into OBS plugin build template
+        shell: pwsh
+        run: |
+          Copy-Item obs-plugin/src/* obs-template/src/
+          $specPath = 'obs-template/buildspec.json'
+          $spec = Get-Content $specPath -Raw | ConvertFrom-Json
+          $spec.name = 'iphone-usb-camera'
+          $spec.displayName = 'iPhone USB Camera'
+          $spec.version = '0.1.0'
+          $spec | ConvertTo-Json -Depth 20 | Set-Content $specPath
+          $cmakePath = 'obs-template/CMakeLists.txt'
+          $cmake = Get-Content $cmakePath -Raw
+          $cmake = $cmake.Replace('src/plugin-main.c', 'src/plugin.cpp src/usbmux.cpp')
+          $cmake += "`ntarget_compile_features(`${CMAKE_PROJECT_NAME} PRIVATE cxx_std_17)`n"
+          $cmake += "target_compile_definitions(`${CMAKE_PROJECT_NAME} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)`n"
+          $cmake += "target_link_libraries(`${CMAKE_PROJECT_NAME} PRIVATE ws2_32 windowscodecs ole32)`n"
+          Set-Content $cmakePath $cmake
+      - name: Build with OBS dependencies
+        shell: pwsh
+        working-directory: obs-template
+        run: .github/scripts/Build-Windows.ps1 -Target x64 -Configuration Release
+      - name: Collect DLL
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem obs-template/release -Recurse -Filter iphone-usb-camera.dll | Select-Object -First 1
+          if (-not $dll) { throw 'Plugin DLL was not produced' }
+          New-Item -ItemType Directory -Force output | Out-Null
+          Copy-Item -LiteralPath $dll.FullName output/iphone-usb-camera.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-usb-camera-obs33-windows
+          path: output/iphone-usb-camera.dll
