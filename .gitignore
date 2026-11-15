@@ -1,0 +1,4 @@
+obs-plugin/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
