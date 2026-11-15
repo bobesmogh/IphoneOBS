@@ -15,7 +15,6 @@
 #include "usbmux.hpp"
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("iphone-usb-camera", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
 {
     return "Uses an iPhone camera as a direct OBS source over a Lightning USB cable.";
