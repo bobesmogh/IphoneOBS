@@ -132,7 +132,7 @@ final class CameraStreamer: NSObject, ObservableObject, AVCaptureVideoDataOutput
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard !sending, let pixel = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         // 720p JPEG at 15 fps keeps the first version simple and usable in OBS.
-        guard let jpeg = context.jpegRepresentation(of: CIImage(cvPixelBuffer: pixel), colorSpace: CGColorSpaceCreateDeviceRGB(), options: [.lossyCompressionQuality: 0.62]) else { return }
+        guard let jpeg = context.jpegRepresentation(of: CIImage(cvPixelBuffer: pixel), colorSpace: CGColorSpaceCreateDeviceRGB(), options: [:]) else { return }
         var length = UInt32(jpeg.count).bigEndian
         var packet = Data(bytes: &length, count: 4)
         packet.append(jpeg)
@@ -164,3 +164,4 @@ final class CameraStreamer: NSObject, ObservableObject, AVCaptureVideoDataOutput
         }
     }
 }
+
